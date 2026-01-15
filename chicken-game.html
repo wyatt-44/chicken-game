@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Farm & Cook Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* HUD */
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(139, 69, 19, 0.9);
+            padding: 15px 30px;
+            border-radius: 15px;
+            display: flex;
+            gap: 30px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 3px solid #5D4E37;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .hud-icon {
+            font-size: 24px;
+        }
+
+        /* Farm Area */
+        .farm {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(180deg, #87CEEB 0%, #90EE90 30%, #228B22 100%);
+            border-bottom: 8px solid #8B4513;
+        }
+
+        .barn {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 150px;
+            height: 120px;
+            background: #8B0000;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .barn::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: -10px;
+            width: 170px;
+            height: 80px;
+            background: #A52A2A;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+
+        .barn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 70px;
+            background: #5D3A1A;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .fence {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .fence-post {
+            width: 15px;
+            height: 40px;
+            background: #8B4513;
+            border-radius: 3px;
+        }
+
+        /* Chickens */
+        .chicken {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .chicken:hover {
+            transform: scale(1.1);
+        }
+
+        .chicken-body {
+            position: absolute;
+            width: 40px;
+            height: 30px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 15px;
+            left: 5px;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1);
+        }
+
+        .chicken-head {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 5px;
+            left: 25px;
+        }
+
+        .chicken-beak {
+            position: absolute;
+            width: 10px;
+            height: 8px;
+            background: #FFA500;
+            top: 12px;
+            left: 42px;
+            clip-path: polygon(0 0, 100% 50%, 0 100%);
+        }
+
+        .chicken-comb {
+            position: absolute;
+            width: 12px;
+            height: 10px;
+            background: #FF0000;
+            top: 0;
+            left: 28px;
+            border-radius: 50% 50% 0 0;
+        }
+
+        .chicken-eye {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #000;
+            border-radius: 50%;
+            top: 8px;
+            left: 35px;
+        }
+
+        .chicken-legs {
+            position: absolute;
+            bottom: 0;
+            left: 15px;
+            width: 20px;
+            height: 10px;
+        }
+
+        .chicken-leg {
+            position: absolute;
+            width: 3px;
+            height: 10px;
+            background: #FFA500;
+        }
+
+        .chicken-leg:first-child {
+            left: 3px;
+        }
+
+        .chicken-leg:last-child {
+            right: 3px;
+        }
+
+        /* Kitchen Area */
+        .kitchen {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(180deg, #DEB887 0%, #D2691E 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            padding: 20px;
+        }
+
+        .kitchen-floor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50%;
+            background: repeating-linear-gradient(
+                90deg,
+                #8B4513 0px,
+                #8B4513 50px,
+                #A0522D 50px,
+                #A0522D 100px
+            );
+        }
+
+        .counter {
+            position: relative;
+            z-index: 5;
+            background: #696969;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Stove */
+        .stove {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(180deg, #2F2F2F 0%, #1a1a1a 100%);
+            border-radius: 10px;
+            position: relative;
+            border: 3px solid #444;
+        }
+
+        .stove-top {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+        }
+
+        .burner {
+            width: 60px;
+            height: 60px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .burner.active {
+            background: radial-gradient(circle, #FF4500 0%, #FF6347 50%, #FF0000 100%);
+            box-shadow: 0 0 20px #FF4500;
+            animation: flicker 0.5s infinite alternate;
+        }
+
+        @keyframes flicker {
+            from { box-shadow: 0 0 15px #FF4500; }
+            to { box-shadow: 0 0 25px #FF6347; }
+        }
+
+        .pan {
+            width: 50px;
+            height: 50px;
+            background: #2F2F2F;
+            border-radius: 50%;
+            border: 3px solid #444;
+            position: relative;
+        }
+
+        .pan-handle {
+            position: absolute;
+            width: 25px;
+            height: 8px;
+            background: #444;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 0 5px 5px 0;
+        }
+
+        /* Inventory */
+        .inventory {
+            background: #8B4513;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .inventory h3 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .inventory-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .inventory-slot {
+            width: 50px;
+            height: 50px;
+            background: #5D3A1A;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #3D2A1A;
+            transition: all 0.2s;
+        }
+
+        .inventory-slot:hover {
+            background: #7D5A3A;
+            transform: scale(1.05);
+        }
+
+        .inventory-slot.has-chicken {
+            background: #6B8E23;
+        }
+
+        .mini-chicken {
+            font-size: 24px;
+        }
+
+        /* Plates */
+        .plates-area {
+            background: #696969;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .plates-area h3 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .plate {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #FFFFFF 0%, #E8E8E8 100%);
+            border-radius: 50%;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #CCC;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .cooked-chicken {
+            font-size: 40px;
+        }
+
+        /* Cooking Progress */
+        .cooking-progress {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cooking-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FFD700 0%, #FFA500 50%, #8B4513 100%);
+            transition: width 0.1s linear;
+        }
+
+        .cooking-bar.burning {
+            background: linear-gradient(90deg, #8B4513 0%, #FF0000 50%, #000 100%);
+        }
+
+        /* Instructions */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 100;
+            text-align: center;
+        }
+
+        /* Popup messages */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            z-index: 200;
+            text-align: center;
+            display: none;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .popup.show {
+            display: block;
+        }
+
+        /* Floating text */
+        .float-text {
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 150;
+        }
+
+        @keyframes floatUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-50px); }
+        }
+
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 80px;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px #FFD700;
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.9;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud1 {
+            width: 100px;
+            height: 40px;
+            top: 50px;
+            left: 20%;
+            animation: cloudMove 30s linear infinite;
+        }
+
+        .cloud1::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 15px;
+        }
+
+        .cloud1::after {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 40px;
+        }
+
+        .cloud2 {
+            width: 80px;
+            height: 30px;
+            top: 80px;
+            left: 60%;
+            animation: cloudMove 25s linear infinite reverse;
+        }
+
+        .cloud2::before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+
+        .cloud2::after {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 30px;
+        }
+
+        @keyframes cloudMove {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(100vw); }
+        }
+
+        /* Grass tufts */
+        .grass {
+            position: absolute;
+            bottom: 45px;
+            width: 30px;
+            height: 20px;
+            display: flex;
+            gap: 3px;
+        }
+
+        .grass-blade {
+            width: 4px;
+            height: 20px;
+            background: #228B22;
+            border-radius: 50% 50% 0 0;
+            transform-origin: bottom;
+        }
+
+        .grass-blade:nth-child(1) { transform: rotate(-15deg); height: 15px; }
+        .grass-blade:nth-child(2) { height: 20px; }
+        .grass-blade:nth-child(3) { transform: rotate(15deg); height: 18px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- HUD -->
+        <div class="hud">
+            <div class="hud-item">
+                <span class="hud-icon">🐔</span>
+                <span>Caught: <span id="caught-count">0</span></span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-icon">🍗</span>
+                <span>Cooked: <span id="cooked-count">0</span></span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-icon">🔥</span>
+                <span>Burned: <span id="burned-count">0</span></span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-icon">⭐</span>
+                <span>Score: <span id="score">0</span></span>
+            </div>
+        </div>
+
+        <!-- Farm Area -->
+        <div class="farm" id="farm">
+            <div class="sun"></div>
+            <div class="cloud cloud1"></div>
+            <div class="cloud cloud2"></div>
+            <div class="barn"></div>
+
+            <!-- Grass decorations -->
+            <div class="grass" style="left: 250px;"><div class="grass-blade"></div><div class="grass-blade"></div><div class="grass-blade"></div></div>
+            <div class="grass" style="left: 400px;"><div class="grass-blade"></div><div class="grass-blade"></div><div class="grass-blade"></div></div>
+            <div class="grass" style="left: 600px;"><div class="grass-blade"></div><div class="grass-blade"></div><div class="grass-blade"></div></div>
+            <div class="grass" style="left: 800px;"><div class="grass-blade"></div><div class="grass-blade"></div><div class="grass-blade"></div></div>
+
+            <div class="fence">
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+                <div class="fence-post"></div>
+            </div>
+        </div>
+
+        <!-- Kitchen Area -->
+        <div class="kitchen">
+            <div class="kitchen-floor"></div>
+
+            <!-- Inventory -->
+            <div class="counter">
+                <div class="inventory">
+                    <h3>🎒 Raw Chickens</h3>
+                    <div class="inventory-slots" id="inventory">
+                        <!-- Slots generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stove -->
+            <div class="counter">
+                <div class="stove">
+                    <div class="stove-top">
+                        <div class="burner" id="burner1" data-burner="1">
+                            <div class="pan">
+                                <div class="pan-handle"></div>
+                            </div>
+                            <div class="cooking-progress"><div class="cooking-bar" id="bar1"></div></div>
+                        </div>
+                        <div class="burner" id="burner2" data-burner="2">
+                            <div class="pan">
+                                <div class="pan-handle"></div>
+                            </div>
+                            <div class="cooking-progress"><div class="cooking-bar" id="bar2"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plates -->
+            <div class="counter">
+                <div class="plates-area">
+                    <h3>🍽️ Served</h3>
+                    <div class="plate" id="plate">
+                        <!-- Cooked chicken appears here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            🐔 Click chickens in the farm to catch them | 📦 Click inventory to select | 🔥 Click burner to cook | ⏱️ Don't let it burn!
+        </div>
+
+        <!-- Popup -->
+        <div class="popup" id="popup"></div>
+    </div>
+
+    <script>
+        // Game State
+        const state = {
+            caughtChickens: 0,
+            cookedChickens: 0,
+            burnedChickens: 0,
+            score: 0,
+            inventory: [null, null, null, null, null, null],
+            selectedSlot: null,
+            burners: {
+                1: { cooking: false, progress: 0, interval: null },
+                2: { cooking: false, progress: 0, interval: null }
+            },
+            chickens: []
+        };
+
+        // DOM Elements
+        const farm = document.getElementById('farm');
+        const inventoryEl = document.getElementById('inventory');
+        const plate = document.getElementById('plate');
+        const popup = document.getElementById('popup');
+
+        // Initialize
+        function init() {
+            createInventorySlots();
+            spawnChickens(5);
+            setInterval(() => {
+                if (state.chickens.length < 8) {
+                    spawnChicken();
+                }
+            }, 3000);
+        }
+
+        // Create inventory slots
+        function createInventorySlots() {
+            inventoryEl.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                slot.dataset.slot = i;
+                slot.onclick = () => selectSlot(i);
+                if (state.inventory[i]) {
+                    slot.classList.add('has-chicken');
+                    slot.innerHTML = '<span class="mini-chicken">🐔</span>';
+                }
+                if (state.selectedSlot === i) {
+                    slot.style.border = '3px solid gold';
+                }
+                inventoryEl.appendChild(slot);
+            }
+        }
+
+        // Spawn chickens
+        function spawnChickens(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => spawnChicken(), i * 500);
+            }
+        }
+
+        function spawnChicken() {
+            const chicken = document.createElement('div');
+            chicken.className = 'chicken';
+            chicken.innerHTML = `
+                <div class="chicken-comb"></div>
+                <div class="chicken-head"></div>
+                <div class="chicken-eye"></div>
+                <div class="chicken-beak"></div>
+                <div class="chicken-body"></div>
+                <div class="chicken-legs">
+                    <div class="chicken-leg"></div>
+                    <div class="chicken-leg"></div>
+                </div>
+            `;
+
+            const farmRect = farm.getBoundingClientRect();
+            const x = 220 + Math.random() * (farmRect.width - 300);
+            const y = 100 + Math.random() * (farmRect.height - 200);
+
+            chicken.style.left = x + 'px';
+            chicken.style.top = y + 'px';
+
+            chicken.onclick = (e) => catchChicken(e, chicken);
+
+            // Random movement
+            let direction = Math.random() > 0.5 ? 1 : -1;
+            chicken.style.transform = direction === -1 ? 'scaleX(-1)' : '';
+
+            const moveChicken = () => {
+                if (!chicken.parentNode) return;
+
+                const currentLeft = parseFloat(chicken.style.left);
+                const currentTop = parseFloat(chicken.style.top);
+
+                // Random direction change
+                if (Math.random() < 0.02) {
+                    direction *= -1;
+                    chicken.style.transform = direction === -1 ? 'scaleX(-1)' : '';
+                }
+
+                let newLeft = currentLeft + direction * (1 + Math.random());
+                let newTop = currentTop + (Math.random() - 0.5) * 2;
+
+                // Bounds checking
+                if (newLeft < 220) { newLeft = 220; direction = 1; }
+                if (newLeft > farmRect.width - 80) { newLeft = farmRect.width - 80; direction = -1; }
+                if (newTop < 80) newTop = 80;
+                if (newTop > farmRect.height - 100) newTop = farmRect.height - 100;
+
+                chicken.style.left = newLeft + 'px';
+                chicken.style.top = newTop + 'px';
+                chicken.style.transform = direction === -1 ? 'scaleX(-1)' : '';
+            };
+
+            const moveInterval = setInterval(moveChicken, 50);
+            chicken.dataset.moveInterval = moveInterval;
+
+            farm.appendChild(chicken);
+            state.chickens.push(chicken);
+        }
+
+        // Catch chicken
+        function catchChicken(e, chicken) {
+            e.stopPropagation();
+
+            // Find empty slot
+            const emptySlot = state.inventory.findIndex(slot => slot === null);
+            if (emptySlot === -1) {
+                showFloatText(e.clientX, e.clientY, '📦 Inventory full!', '#FF6347');
+                return;
+            }
+
+            // Clear movement interval
+            clearInterval(parseInt(chicken.dataset.moveInterval));
+
+            // Remove chicken from farm
+            const index = state.chickens.indexOf(chicken);
+            if (index > -1) state.chickens.splice(index, 1);
+            chicken.remove();
+
+            // Add to inventory
+            state.inventory[emptySlot] = true;
+            state.caughtChickens++;
+            updateHUD();
+            createInventorySlots();
+
+            showFloatText(e.clientX, e.clientY, '+1 🐔', '#32CD32');
+            showPopup('🐔 Chicken caught!', 800);
+        }
+
+        // Select inventory slot
+        function selectSlot(index) {
+            if (state.inventory[index]) {
+                state.selectedSlot = index;
+                createInventorySlots();
+            }
+        }
+
+        // Setup burner clicks
+        document.getElementById('burner1').onclick = () => useBurner(1);
+        document.getElementById('burner2').onclick = () => useBurner(2);
+
+        function useBurner(burnerNum) {
+            const burner = state.burners[burnerNum];
+            const burnerEl = document.getElementById('burner' + burnerNum);
+            const barEl = document.getElementById('bar' + burnerNum);
+
+            // If already cooking, try to take it off
+            if (burner.cooking) {
+                clearInterval(burner.interval);
+                burner.cooking = false;
+                burnerEl.classList.remove('active');
+
+                if (burner.progress >= 100) {
+                    // Burned!
+                    state.burnedChickens++;
+                    state.score -= 10;
+                    barEl.style.width = '0%';
+                    barEl.classList.remove('burning');
+                    showPopup('🔥 Burned! -10 points', 1000);
+                } else if (burner.progress >= 70) {
+                    // Perfectly cooked!
+                    state.cookedChickens++;
+                    state.score += 25;
+                    plate.innerHTML = '<span class="cooked-chicken">🍗</span>';
+                    setTimeout(() => plate.innerHTML = '', 2000);
+                    barEl.style.width = '0%';
+                    showPopup('🍗 Perfect! +25 points', 1000);
+                } else {
+                    // Undercooked - put back in inventory
+                    const emptySlot = state.inventory.findIndex(slot => slot === null);
+                    if (emptySlot !== -1) {
+                        state.inventory[emptySlot] = true;
+                        createInventorySlots();
+                    }
+                    barEl.style.width = '0%';
+                    showPopup('🥶 Undercooked! Back to inventory', 1000);
+                }
+
+                burner.progress = 0;
+                updateHUD();
+                return;
+            }
+
+            // Start cooking if we have a selected chicken
+            if (state.selectedSlot !== null && state.inventory[state.selectedSlot]) {
+                state.inventory[state.selectedSlot] = null;
+                state.selectedSlot = null;
+                createInventorySlots();
+
+                burner.cooking = true;
+                burner.progress = 0;
+                burnerEl.classList.add('active');
+
+                burner.interval = setInterval(() => {
+                    burner.progress += 2;
+                    barEl.style.width = Math.min(burner.progress, 100) + '%';
+
+                    if (burner.progress >= 85) {
+                        barEl.classList.add('burning');
+                    }
+
+                    if (burner.progress >= 120) {
+                        // Auto-burn after too long
+                        clearInterval(burner.interval);
+                        burner.cooking = false;
+                        burnerEl.classList.remove('active');
+                        state.burnedChickens++;
+                        state.score -= 10;
+                        burner.progress = 0;
+                        barEl.style.width = '0%';
+                        barEl.classList.remove('burning');
+                        showPopup('🔥 Burned! -10 points', 1000);
+                        updateHUD();
+                    }
+                }, 100);
+            } else {
+                showPopup('📦 Select a chicken first!', 800);
+            }
+        }
+
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('caught-count').textContent = state.caughtChickens;
+            document.getElementById('cooked-count').textContent = state.cookedChickens;
+            document.getElementById('burned-count').textContent = state.burnedChickens;
+            document.getElementById('score').textContent = state.score;
+        }
+
+        // Show popup
+        function showPopup(text, duration) {
+            popup.textContent = text;
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), duration);
+        }
+
+        // Show floating text
+        function showFloatText(x, y, text, color) {
+            const float = document.createElement('div');
+            float.className = 'float-text';
+            float.textContent = text;
+            float.style.left = x + 'px';
+            float.style.top = y + 'px';
+            float.style.color = color;
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1000);
+        }
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>
