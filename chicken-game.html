@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken Farm & Cook Game</title>
+    <title>Chicken Farm & Cook Game v1.1</title>
     <style>
         * {
             margin: 0;
@@ -845,11 +845,11 @@
                 } else if (burner.progress >= 70) {
                     // Perfectly cooked!
                     state.cookedChickens++;
-                    state.score += 25;
+                    state.score += 50;
                     plate.innerHTML = '<span class="cooked-chicken">🍗</span>';
                     setTimeout(() => plate.innerHTML = '', 2000);
                     barEl.style.width = '0%';
-                    showPopup('🍗 Perfect! +25 points', 1000);
+                    showPopup('🍗 Perfect! +50 points', 1000);
                 } else {
                     // Undercooked - put back in inventory
                     const emptySlot = state.inventory.findIndex(slot => slot === null);
